@@ -26,24 +26,7 @@ dp.message.middleware(LoggingMiddleware())
 # Регистрация роутеров
 dp.include_router(start_router)
 dp.include_router(handlers_router)
-# dp.include_router(questionnaire_router)
 
-async def check_active_vacancies():
-    var = ''
-    try:
-        if var:
-            asyncio.create_task()
-    except:
-        pass
-        # current_pid = os.getpid()
-        # subprocess.run([r'I:\Projects Python\HR_bot\venv\Scripts\python', 'main.py']) 
-        # # Находим процесс по PID
-        # process = psutil.Process(current_pid)
-
-        # # Завершаем процесс
-        # process.terminate()
-            # await collect_responses()
-    # asyncio.run(check_active_vacancies())
 
 async def main():
     await dp.start_polling(bot)

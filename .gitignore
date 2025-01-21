@@ -1,5 +1,4 @@
 venv/
 .env
 alembic.ini
-test.py
-PostgreSQL/
+

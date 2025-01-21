@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WB Product Info</title>
+</head>
+<body>
+    <h1>WB Product Info</h1>
+    <input type="text" id="artikulInput" placeholder="Enter artikul">
+    <button id="infoButton">Get Info</button>
+    <button id="subscribeButton">Subscribe</button>
+    <div id="result"></div>
+    <script>
+        const artikulInput = document.getElementById('artikulInput');
+        const infoButton = document.getElementById('infoButton');
+        const subscribeButton = document.getElementById('subscribeButton');
+        const resultDiv = document.getElementById('result');
+
+        infoButton.addEventListener('click', async () => {
+            const artikul = artikulInput.value;
+            try {
+              const response = await fetch(`/api/v1/products`, {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({artikul: artikul})
+              });
+              if (response.ok) {
+                  const data = await response.json();
+                  resultDiv.textContent = JSON.stringify(data, null, 2);
+              } else {
+                  resultDiv.textContent = 'Ошибка при получении данных.';
+              }
+            } catch(error) {
+                resultDiv.textContent = 'Ошибка: ' + error;
+            }
+        });
+        subscribeButton.addEventListener('click', async () => {
+          const artikul = artikulInput.value;
+            try {
+              const response = await fetch(`/api/v1/subscribe/${artikul}`, {
+                  method: 'GET',
+              });
+                if (response.ok) {
+                    resultDiv.textContent = 'Подписка оформлена.';
+                } else {
+                    resultDiv.textContent = 'Ошибка при оформлении подписки.';
+                }
+          } catch (error) {
+                resultDiv.textContent = 'Ошибка: ' + error;
+            }
+        });
+    </script>
+</body>
+</html>
