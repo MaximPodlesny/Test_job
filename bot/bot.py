@@ -1,4 +1,4 @@
-from aiogram import Bot, Despatcher, types
+from aiogram import Bot
 from aiogram.filters import CommandStart
 from config.settings import settings
 
