@@ -15,8 +15,6 @@ from middlewares.logging import LoggingMiddleware
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
-create_tables()
-
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 

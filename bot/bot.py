@@ -1,7 +1,10 @@
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from aiogram import Bot
-from aiogram.filters import CommandStart
 from config.settings import settings
 
 
-bot = Bot(BOT_TOKEN)
+bot = Bot(settings.bot_token)
 
