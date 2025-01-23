@@ -8,5 +8,5 @@ tmp
 .idea
 Dockerfile
 docker-compose.yml
-api/localhost+2-key.pem
-api/localhost+2.pem
+# api/localhost+2-key.pem
+# api/localhost+2.pem
