@@ -9,21 +9,26 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert, func, delete
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from config.settings import settings
 from db.models import Subscription, get_session, Product, engine
 from schemas.schemas import ProductRequest, ProductResponse, MessageResponse
 
+
+
 app = FastAPI()
 scheduler = AsyncIOScheduler()
-#211695539
+#211695539 
+
 origins = [
-    "https://127.0.0.1:8000",  # Замените на адрес вашего веб-приложения
-    "https://127.0.0.1:8000", # Или добавьте домен вашего фронтенда
+    f'{settings.app_host}:{settings.app_port}',  # Замените на адрес вашего веб-приложения
+    f'{settings.app_host}:{settings.app_port}', # Или добавьте домен вашего фронтенда
 ]
 
 app.add_middleware(
@@ -34,6 +39,7 @@ app.add_middleware(
     allow_headers=["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
 )
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '')))
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 
@@ -65,7 +71,7 @@ async def get_product_from_wb(artikul: str) -> dict:
             "total_quantity": sum([stock["qty"] for stock in product_data["sizes"][0]["stocks"]]),
         }
 
-async def get_product_from_db(session: AsyncSession, artikul: str) -> Product | None:
+async def get_product_from_db(session: AsyncSession, artikul: str) -> Product:
     query = select(Product).where(Product.artikul == artikul)
     result = await session.execute(query)
     return result.scalar_one_or_none()
@@ -138,7 +144,13 @@ async def scheduled_product_update(artikul: str, session: AsyncSession):
          print(f"Error updating product {artikul}: {e}")
 
 @app.get('/api/v1/wb', response_model=ProductResponse)
-async def get_product_wb(product_request: ProductRequest):
+async def get_product_wb(
+    product_request: ProductRequest,
+    api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)),
+    session: AsyncSession = Depends(get_session)
+    ):
+    if api_key != "Bearer test_api_key":
+        raise HTTPException(status_code=401, detail="Невалидный токен")
     try:
         product_data = await get_product_from_wb(product_request.artikul)
         return ProductResponse(
@@ -155,8 +167,13 @@ async def get_product_wb(product_request: ProductRequest):
 
 @app.post("/api/v1/products", response_model=ProductResponse)
 async def get_product_info(
-    product_request: ProductRequest, session: AsyncSession = Depends(get_session)
-):
+    product_request: ProductRequest,
+    api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)),
+    session: AsyncSession = Depends(get_session)
+    ):
+    print(api_key)
+    if api_key != "Bearer test_api_key":
+        raise HTTPException(status_code=401, detail="Невалидный токен")
     try:
         product_data = await get_product_from_wb(product_request.artikul)
         existing_product = await get_product_from_db(session, product_data["artikul"])
@@ -184,19 +201,23 @@ async def get_product_info(
        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/subscribe/{artikul}", response_model=MessageResponse)
-async def subscribe_product(artikul: str, session: AsyncSession = Depends(get_session)):
-        await add_subscription(session, artikul)
-        scheduler.add_job(
-            scheduled_product_update,
-            trigger=CronTrigger(minute="*/1"),
-            args=[artikul, session],
-            id=artikul,
-            replace_existing=True,
-        )
-        return {"message": f"Subscription for product {artikul} started."}
+async def subscribe_product(artikul: str, api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)), session: AsyncSession = Depends(get_session)):
+    if api_key != "Bearer test_api_key":
+        raise HTTPException(status_code=401, detail="Невалидный токен")
+    await add_subscription(session, artikul)
+    scheduler.add_job(
+        scheduled_product_update,
+        trigger=CronTrigger(minute="*/1"),
+        args=[artikul, session],
+        id=artikul,
+        replace_existing=True,
+    )
+    return {"message": f"Subscription for product {artikul} started."}
 
 @app.get("/api/v1/unsubscribe/{artikul}", response_model=MessageResponse)
-async def unsubscribe_product(artikul: str, session: AsyncSession = Depends(get_session)):
+async def unsubscribe_product(artikul: str, api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)), session: AsyncSession = Depends(get_session)):
+    if api_key != "Bearer test_api_key":
+        raise HTTPException(status_code=401, detail="Невалидный токен")
     await remove_subscription(session, artikul)
     return {"message": f"Subscription for product {artikul} stopped."}
 
@@ -204,10 +225,19 @@ async def unsubscribe_product(artikul: str, session: AsyncSession = Depends(get_
 # async def root():
 #     return {"message": "Hello World"}
 
+# @app.get("/", response_class=HTMLResponse)
+# async def read_root(request: Request):
+#     # cache_buster = int(time.time())
+#     return templates.TemplateResponse("auth.html", {"request": request})
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    # cache_buster = int(time.time())
     return templates.TemplateResponse("index.html", {"request": request})
+
+# @app.get("/", response_class=HTMLResponse)
+# async def read_root(request: Request):
+#     # cache_buster = int(time.time())
+#     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/product.html", response_class=HTMLResponse)
 async def read_product(request: Request):

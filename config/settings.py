@@ -11,9 +11,10 @@ class Settings(BaseSettings):
     """
     database_url: str
     bot_token: str
-    secret_key: str
-    gpt_key: str
-    web_app_url: str
+    # secret_key: str
+    # gpt_key: str
+    app_host: str
+    app_port: str
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding='utf-8')
 
 settings = Settings()
