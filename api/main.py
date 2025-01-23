@@ -22,7 +22,7 @@ from schemas.schemas import ProductRequest, ProductResponse, MessageResponse
 
 
 
-app = FastAPI()
+app = FastAPI(docs_url="/api/v1/doc")
 scheduler = AsyncIOScheduler()
 #211695539 
 
@@ -171,6 +171,17 @@ async def get_product_info(
     api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)),
     session: AsyncSession = Depends(get_session)
     ):
+    """
+    Эндпоинт для получения информации о товаре и записи в базу.
+
+    Args:
+        product_request: Запрос с ID товара.
+        api_key: Токен для авторизации.
+        session: Сессия для работы с базой данных.
+
+    Returns:
+        Информация о товаре.
+    """
     print(api_key)
     if api_key != "Bearer test_api_key":
         raise HTTPException(status_code=401, detail="Невалидный токен")
@@ -202,6 +213,17 @@ async def get_product_info(
 
 @app.get("/api/v1/subscribe/{artikul}", response_model=MessageResponse)
 async def subscribe_product(artikul: str, api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)), session: AsyncSession = Depends(get_session)):
+    """
+    Эндпоинт для подписки на обновления данных о товаре.
+
+    Args:
+        artikul: Артикул товара.
+        api_key: Токен для авторизации.
+        session: Сессия для работы с базой данных.
+
+    Returns:
+        Сообщение о результате подписки.
+    """
     if api_key != "Bearer test_api_key":
         raise HTTPException(status_code=401, detail="Невалидный токен")
     await add_subscription(session, artikul)
@@ -216,28 +238,27 @@ async def subscribe_product(artikul: str, api_key: str = Depends(APIKeyHeader(na
 
 @app.get("/api/v1/unsubscribe/{artikul}", response_model=MessageResponse)
 async def unsubscribe_product(artikul: str, api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)), session: AsyncSession = Depends(get_session)):
+    """
+    Эндпоинт для отписки от обновлений данных о товаре.
+
+    Args:
+        artikul: Артикул товара.
+        api_key: Токен для авторизации.
+        session: Сессия для работы с базой данных.
+
+    Returns:
+        Сообщение о результате отписки.
+    """
     if api_key != "Bearer test_api_key":
         raise HTTPException(status_code=401, detail="Невалидный токен")
     await remove_subscription(session, artikul)
     return {"message": f"Subscription for product {artikul} stopped."}
 
-# @app.get("/", response_model=MessageResponse)
-# async def root():
-#     return {"message": "Hello World"}
-
-# @app.get("/", response_class=HTMLResponse)
-# async def read_root(request: Request):
-#     # cache_buster = int(time.time())
-#     return templates.TemplateResponse("auth.html", {"request": request})
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# @app.get("/", response_class=HTMLResponse)
-# async def read_root(request: Request):
-#     # cache_buster = int(time.time())
-#     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/product.html", response_class=HTMLResponse)
 async def read_product(request: Request):
