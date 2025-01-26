@@ -114,7 +114,7 @@ async def restore_subscriptions():
         for subscription in result.scalars():
             scheduler.add_job(
                 scheduled_product_update,
-                trigger=CronTrigger(minute="*/1"),
+                trigger=CronTrigger(minute="*/3"),
                 args=[subscription.artikul, session],
                 id=subscription.artikul,
                 replace_existing=True,
@@ -149,6 +149,17 @@ async def get_product_wb(
     api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)),
     session: AsyncSession = Depends(get_session)
     ):
+    """
+    Эндпоинт для получения информации о товаре из wb.
+
+    Args:
+        product_request: Запрос с ID товара.
+        api_key: Токен для авторизации.
+        session: Сессия для работы с базой данных.
+
+    Returns:
+        Информация о товаре.
+    """
     if api_key != "Bearer test_api_key":
         raise HTTPException(status_code=401, detail="Невалидный токен")
     try:
@@ -171,7 +182,19 @@ async def get_product_info(
     api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)),
     session: AsyncSession = Depends(get_session)
     ):
-    print(api_key)
+    """
+    Эндпоинт для получения информации о товаре и записи в базу.
+
+    Args:
+        product_request: Запрос с ID товара.
+        api_key: Токен для авторизации.
+        session: Сессия для работы с базой данных.
+
+    Returns:
+        Информация о товаре.
+    """
+    from bot.bot import bot
+    await bot.send_message(498283860, 'В start')
     if api_key != "Bearer test_api_key":
         raise HTTPException(status_code=401, detail="Невалидный токен")
     try:
@@ -202,12 +225,23 @@ async def get_product_info(
 
 @app.get("/api/v1/subscribe/{artikul}", response_model=MessageResponse)
 async def subscribe_product(artikul: str, api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)), session: AsyncSession = Depends(get_session)):
+    """
+    Эндпоинт для подписки на обновления данных о товаре.
+
+    Args:
+        artikul: Артикул товара.
+        api_key: Токен для авторизации.
+        session: Сессия для работы с базой данных.
+
+    Returns:
+        Сообщение о результате подписки.
+    """
     if api_key != "Bearer test_api_key":
         raise HTTPException(status_code=401, detail="Невалидный токен")
     await add_subscription(session, artikul)
     scheduler.add_job(
         scheduled_product_update,
-        trigger=CronTrigger(minute="*/1"),
+        trigger=CronTrigger(minute="*/30"),
         args=[artikul, session],
         id=artikul,
         replace_existing=True,
@@ -216,6 +250,17 @@ async def subscribe_product(artikul: str, api_key: str = Depends(APIKeyHeader(na
 
 @app.get("/api/v1/unsubscribe/{artikul}", response_model=MessageResponse)
 async def unsubscribe_product(artikul: str, api_key: str = Depends(APIKeyHeader(name="Authorization", auto_error=False)), session: AsyncSession = Depends(get_session)):
+    """
+    Эндпоинт для отписки от обновлений данных о товаре.
+
+    Args:
+        artikul: Артикул товара.
+        api_key: Токен для авторизации.
+        session: Сессия для работы с базой данных.
+
+    Returns:
+        Сообщение о результате отписки.
+    """
     if api_key != "Bearer test_api_key":
         raise HTTPException(status_code=401, detail="Невалидный токен")
     await remove_subscription(session, artikul)
