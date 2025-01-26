@@ -22,7 +22,7 @@ from schemas.schemas import ProductRequest, ProductResponse, MessageResponse
 
 
 
-app = FastAPI()
+app = FastAPI(docs_url="/api/v1/doc")
 scheduler = AsyncIOScheduler()
 #211695539 
 
@@ -193,8 +193,12 @@ async def get_product_info(
     Returns:
         Информация о товаре.
     """
+<<<<<<< HEAD
     from bot.bot import bot
     await bot.send_message(498283860, 'В start')
+=======
+    print(api_key)
+>>>>>>> d2a4e04ea3abbbdc1bc07eb6ac9af6e9e6d8260a
     if api_key != "Bearer test_api_key":
         raise HTTPException(status_code=401, detail="Невалидный токен")
     try:
@@ -266,23 +270,11 @@ async def unsubscribe_product(artikul: str, api_key: str = Depends(APIKeyHeader(
     await remove_subscription(session, artikul)
     return {"message": f"Subscription for product {artikul} stopped."}
 
-# @app.get("/", response_model=MessageResponse)
-# async def root():
-#     return {"message": "Hello World"}
-
-# @app.get("/", response_class=HTMLResponse)
-# async def read_root(request: Request):
-#     # cache_buster = int(time.time())
-#     return templates.TemplateResponse("auth.html", {"request": request})
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# @app.get("/", response_class=HTMLResponse)
-# async def read_root(request: Request):
-#     # cache_buster = int(time.time())
-#     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/product.html", response_class=HTMLResponse)
 async def read_product(request: Request):
